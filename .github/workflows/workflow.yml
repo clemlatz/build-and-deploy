@@ -1,0 +1,46 @@
+name: Build and deploy
+
+on:
+  workflow_call:
+    inputs:
+      build-output-directory:
+        description: Path to the directory where the build script outputs file
+        required: true
+        type: string
+      remote-target-path:
+        description: Path to the directory where the build script outputs file
+        required: true
+        type: string
+    secrets:
+      ssh-private-key:
+        description: Authorized SSH key for the remote server
+        required: true
+      ssh-remote-host:
+        description: Host for the remote server
+        required: true
+      ssh-remote-user:
+        description: User for the remote server
+        required: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy with SSH
+        uses: easingthemes/ssh-deploy@v2.1.4
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.ssh-private-key }}
+          REMOTE_HOST: ${{ secrets.ssh-remote-host }}
+          REMOTE_USER: ${{ secrets.ssh-remote-user }}
+          SOURCE: "${{ inputs.build-output-directory }}/"
+          TARGET: ${{ inputs.remote-target-path }}
